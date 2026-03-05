@@ -91,6 +91,7 @@ fun UIApp(
             ) { _ ->
                 ProfileScreen(
                     navController = navController,
+                    snackbarHost = snackbarHostState,
                     authViewModel = authViewModel,
                     todoViewModel = todoViewModel
                 )

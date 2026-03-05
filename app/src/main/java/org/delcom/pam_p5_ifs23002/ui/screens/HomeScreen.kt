@@ -1,6 +1,5 @@
 package org.delcom.pam_p5_ifs23002.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.delcom.pam_p5_ifs23002.helper.ConstHelper
 import org.delcom.pam_p5_ifs23002.helper.RouteHelper
+import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoData
 import org.delcom.pam_p5_ifs23002.ui.components.BottomNavComponent
 import org.delcom.pam_p5_ifs23002.ui.components.LoadingUI
 import org.delcom.pam_p5_ifs23002.ui.components.StatusCard
@@ -46,6 +46,7 @@ import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthLogoutUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthViewModel
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.TodoViewModel
+import org.delcom.pam_p5_ifs23002.ui.viewmodels.TodosUIState
 
 @Composable
 fun HomeScreen(
@@ -55,10 +56,12 @@ fun HomeScreen(
 ) {
     // Ambil data dari viewmodel
     val uiStateAuth by authViewModel.uiState.collectAsState()
+    val uiStateTodo by todoViewModel.uiState.collectAsState()
 
     var isLoading by remember { mutableStateOf(false) }
     var isFreshToken by remember { mutableStateOf(false) }
     var authToken by remember { mutableStateOf<String?>(null) }
+    var todos by remember { mutableStateOf<List<ResponseTodoData>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         if (isLoading) return@LaunchedEffect
@@ -91,12 +94,19 @@ fun HomeScreen(
                     val newToken = (uiStateAuth.auth as AuthUIState.Success).data.authToken
                     if (authToken != newToken) {
                         authToken = (uiStateAuth.auth as AuthUIState.Success).data.authToken
+                        todoViewModel.getAllTodos(authToken!!, refresh = true)
                     }
-                    isLoading = false
                 }
             } else {
                 onLogout("")
             }
+        }
+    }
+
+    LaunchedEffect(uiStateTodo.todos) {
+        if (uiStateTodo.todos is TodosUIState.Success) {
+            todos = (uiStateTodo.todos as TodosUIState.Success).data
+            isLoading = false
         }
     }
 
@@ -149,7 +159,7 @@ fun HomeScreen(
             modifier = Modifier
                 .weight(1f)
         ) {
-            HomeUI()
+            HomeUI(todos)
         }
         // Bottom Nav
         BottomNavComponent(navController = navController)
@@ -157,10 +167,10 @@ fun HomeScreen(
 }
 
 @Composable
-fun HomeUI() {
-    val totalTodos = 0
-    val doneTodos = 0
-    val pendingTodos = 0
+fun HomeUI(todos: List<ResponseTodoData>) {
+    val totalTodos = todos.size
+    val doneTodos = todos.count { it.isDone }
+    val pendingTodos = totalTodos - doneTodos
 
     Column(
         modifier = Modifier.padding(top = 16.dp)
@@ -226,6 +236,6 @@ fun HomeUI() {
 @Composable
 fun PreviewHomeUI() {
     DelcomTheme {
-        HomeUI()
+        HomeUI(emptyList())
     }
 }

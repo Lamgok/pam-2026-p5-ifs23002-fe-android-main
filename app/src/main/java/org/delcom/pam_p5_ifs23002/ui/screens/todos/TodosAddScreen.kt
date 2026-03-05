@@ -4,11 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -20,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -69,8 +72,6 @@ fun TodosAddScreen(
     val authToken = remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        // Reset status todo action
-
         if(uiStateAuth.auth !is AuthUIState.Success){
             RouteHelper.to(
                 navController,
@@ -88,6 +89,7 @@ fun TodosAddScreen(
     fun onSave(
         title: String,
         description: String,
+        urgency: String
     ) {
         if(authToken.value == null){
             return
@@ -98,12 +100,14 @@ fun TodosAddScreen(
         tmpTodo = ResponseTodoData(
             title = title,
             description = description,
+            urgency = urgency
         )
 
         todoViewModel.postTodo(
             authToken = authToken.value!!,
             title = title,
             description = description,
+            urgency = urgency
         )
     }
 
@@ -171,6 +175,7 @@ fun TodosAddUI(
     tmpTodo: ResponseTodoData?,
     onSave: (
         String,
+        String,
         String
     ) -> Unit
 ) {
@@ -178,6 +183,7 @@ fun TodosAddUI(
 
     var dataTitle by remember { mutableStateOf(tmpTodo?.title ?: "") }
     var dataDescription by remember { mutableStateOf(tmpTodo?.description ?: "") }
+    var dataUrgency by remember { mutableStateOf(tmpTodo?.urgency ?: "Low") }
 
     Column(
         modifier = Modifier
@@ -210,6 +216,42 @@ fun TodosAddUI(
                 imeAction = ImeAction.Done
             ),
         )
+
+        // Urgency
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Urgency",
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = dataUrgency == "Low",
+                    onClick = { dataUrgency = "Low" }
+                )
+                Text("Low")
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                RadioButton(
+                    selected = dataUrgency == "Medium",
+                    onClick = { dataUrgency = "Medium" }
+                )
+                Text("Medium")
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                RadioButton(
+                    selected = dataUrgency == "High",
+                    onClick = { dataUrgency = "High" }
+                )
+                Text("High")
+            }
+        }
 
         // Description
         OutlinedTextField(
@@ -269,7 +311,8 @@ fun TodosAddUI(
 
                 onSave(
                     dataTitle,
-                    dataDescription
+                    dataDescription,
+                    dataUrgency
                 )
             },
             modifier = Modifier
@@ -313,10 +356,4 @@ fun TodosAddUI(
 @Preview(showBackground = true, name = "Light Mode")
 @Composable
 fun PreviewTodosAddUI() {
-//    DelcomTheme {
-//        TodosAddUI(
-//            todos = DummyData.getTodosAddData(),
-//            onOpen = {}
-//        )
-//    }
 }

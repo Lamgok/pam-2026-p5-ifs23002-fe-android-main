@@ -95,7 +95,11 @@ interface TodoApiService {
     @GET("todos")
     suspend fun getTodos(
         @Header("Authorization") authToken: String,
-        @Query("search") search: String? = null
+        @Query("search") search: String? = null,
+        @Query("isDone") isDone: Boolean? = null,
+        @Query("urgency") urgency: String? = null,
+        @Query("page") page: Int? = null,
+        @Query("perPage") perPage: Int? = null
     ): ResponseMessage<ResponseTodos?>
 
     // Menambahkan data todo

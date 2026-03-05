@@ -9,11 +9,7 @@ plugins {
 
 android {
     namespace = "org.delcom.pam_p5_ifs23002"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "org.delcom.pam_p5_ifs23002"
@@ -24,7 +20,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "BASE_URL", "\"https://pam-2026-p5-ifs18005-be.delcom.org:8080/\"")
+        buildConfigField("String", "BASE_URL", "\"https://pam-2026-p5-ifs23002-be.delcom.org:8080/\"")
     }
 
     buildTypes {
