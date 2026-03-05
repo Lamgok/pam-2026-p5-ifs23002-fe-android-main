@@ -8,6 +8,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.delcom.pam_p5_ifs23002.network.data.ResponseMessage
 import retrofit2.HttpException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 object SuspendHelper {
     enum class SnackBarType(val title: String) {
@@ -38,18 +41,40 @@ object SuspendHelper {
         return try {
             apiCall()
         } catch (e: HttpException) {
-            val errorResponse = e.response()?.errorBody()?.string()
-            val jsonError = Gson().fromJson(errorResponse, ResponseMessage::class.java)
-
+            val errorBody = e.response()?.errorBody()?.string()
+            try {
+                // Parse error response dari backend
+                val jsonError = Gson().fromJson(errorBody, ResponseMessage::class.java)
+                ResponseMessage(
+                    status = "error",
+                    message = jsonError?.message ?: "Server Error (${e.code()})"
+                )
+            } catch (parseException: Exception) {
+                ResponseMessage(
+                    status = "error",
+                    message = "Terjadi kesalahan pada server (${e.code()})"
+                )
+            }
+        } catch (e: ConnectException) {
             ResponseMessage(
                 status = "error",
-                message = jsonError?.message ?: "Server error"
+                message = "Gagal terhubung ke server. Periksa koneksi internet atau URL backend."
+            )
+        } catch (e: SocketTimeoutException) {
+            ResponseMessage(
+                status = "error",
+                message = "Koneksi lambat (Timeout). Silakan coba lagi."
+            )
+        } catch (e: UnknownHostException) {
+            ResponseMessage(
+                status = "error",
+                message = "Server tidak ditemukan. Periksa URL di build.gradle."
             )
         } catch (e: Exception) {
             e.printStackTrace()
             ResponseMessage(
                 status = "error",
-                message = e.message ?: "Unknown error"
+                message = e.message ?: "Terjadi kesalahan yang tidak diketahui"
             )
         }
     }
