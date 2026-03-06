@@ -2,16 +2,7 @@ package org.delcom.pam_p5_ifs23002.ui.screens.todos
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -21,35 +12,21 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import org.delcom.pam_p5_ifs23002.R
@@ -73,7 +50,6 @@ fun TodosScreen(
     authViewModel: AuthViewModel,
     todoViewModel: TodoViewModel
 ) {
-    // Ambil data dari viewmodel
     val uiStateAuth by authViewModel.uiState.collectAsState()
     val uiStateTodo by todoViewModel.uiState.collectAsState()
 
@@ -83,163 +59,91 @@ fun TodosScreen(
     var filterUrgency by remember { mutableStateOf<String?>(null) }
     var showFilterMenu by remember { mutableStateOf(false) }
 
-    // Muat data
     var todos by remember { mutableStateOf<List<ResponseTodoData>>(emptyList()) }
     var hasMore by remember { mutableStateOf(true) }
     var authToken by remember { mutableStateOf<String?>(null) }
 
-    fun fetchTodosData(refresh: Boolean = false) {
-        if (refresh) isLoading = true
-        authToken = (uiStateAuth.auth as? AuthUIState.Success)?.data?.authToken
-        todoViewModel.getAllTodos(authToken ?: "", searchQuery.text, filterDone, filterUrgency, refresh)
-    }
-
-    // Picu pengambilan data todos
+    // Memastikan refresh data setiap kali masuk ke screen ini
     LaunchedEffect(Unit) {
-        if (uiStateAuth.auth !is AuthUIState.Success) {
-            RouteHelper.to(navController, ConstHelper.RouteNames.Home.path, true)
-            return@LaunchedEffect
-        }
-        fetchTodosData(refresh = true)
-    }
-
-    // Picu ketika terjadi perubahan data todos
-    LaunchedEffect(uiStateTodo.todos) {
-        if (uiStateTodo.todos !is TodosUIState.Loading) {
-            isLoading = false
-            if (uiStateTodo.todos is TodosUIState.Success) {
-                val state = uiStateTodo.todos as TodosUIState.Success
-                todos = state.data
-                hasMore = state.hasMore
-            }
-        }
-    }
-
-    fun onLogout(token: String){
-        isLoading = true
-        authViewModel.logout(token)
-    }
-
-    LaunchedEffect(uiStateAuth.authLogout) {
-        if (uiStateAuth.authLogout !is AuthLogoutUIState.Loading) {
+        if (uiStateAuth.auth is AuthUIState.Success) {
+            authToken = (uiStateAuth.auth as AuthUIState.Success).data.authToken
+            todoViewModel.getAllTodos(authToken!!, refresh = true)
+        } else {
             RouteHelper.to(navController, ConstHelper.RouteNames.AuthLogin.path, true)
         }
     }
 
-    // Tampilkan halaman loading
-    if (isLoading) {
-        LoadingUI()
-        return
-    }
-
-    // Menu Top App Bar
-    val menuItems = listOf(
-        TopAppBarMenuItem(
-            text = "Profile",
-            icon = Icons.Filled.Person,
-            route = ConstHelper.RouteNames.Profile.path
-        ),
-        TopAppBarMenuItem(
-            text = "Logout",
-            icon = Icons.AutoMirrored.Filled.Logout,
-            route = null,
-            onClick = { onLogout(authToken ?: "") }
-        )
-    )
-
-    fun onOpen(todoId: String) {
-        RouteHelper.to(navController, "todos/${todoId}")
-    }
-
-    val listState = rememberLazyListState()
-    val shouldLoadMore by remember {
-        derivedStateOf {
-            val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            lastVisibleItemIndex >= todos.size - 1 && hasMore && uiStateTodo.todos !is TodosUIState.Loading
-        }
-    }
-
-    LaunchedEffect(shouldLoadMore) {
-        if (shouldLoadMore) {
-            fetchTodosData(refresh = false)
+    LaunchedEffect(uiStateTodo.todos) {
+        when (val state = uiStateTodo.todos) {
+            is TodosUIState.Success -> {
+                todos = state.data
+                hasMore = state.hasMore
+                isLoading = false
+            }
+            is TodosUIState.Error -> {
+                isLoading = false
+            }
+            is TodosUIState.Loading -> {
+                // Jangan set isLoading = true di sini agar tidak flicker saat load more
+            }
         }
     }
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Top App Bar
         TopAppBarComponent(
             navController = navController,
-            title = "Todos",
+            title = "Daftar Tugas",
             showBackButton = false,
-            customMenuItems = menuItems,
             withSearch = true,
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },
-            onSearchAction = { fetchTodosData(refresh = true) }
+            onSearchAction = { todoViewModel.getAllTodos(authToken ?: "", searchQuery.text, filterDone, filterUrgency, true) }
         )
 
-        // Filter Bar
+        // Filter chips
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(8.dp))
             Text(
-                text = "Filter: ${if(filterDone == null) "Semua" else if(filterDone!!) "Selesai" else "Belum"} | ${filterUrgency ?: "Semua Urgensi"}",
-                style = MaterialTheme.typography.bodySmall,
+                text = "Filter: ${if(filterDone == null) "Semua" else if(filterDone!!) "Selesai" else "Belum"}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
             )
-            Box {
-                IconButton(onClick = { showFilterMenu = true }) {
-                    Icon(Icons.Default.FilterList, contentDescription = "Filter")
-                }
-                DropdownMenu(expanded = showFilterMenu, onDismissRequest = { showFilterMenu = false }) {
-                    Text("Status", modifier = Modifier.padding(8.dp), fontWeight = FontWeight.Bold)
-                    DropdownMenuItem(text = { Text("Semua") }, onClick = { filterDone = null; showFilterMenu = false; fetchTodosData(refresh = true) })
-                    DropdownMenuItem(text = { Text("Selesai") }, onClick = { filterDone = true; showFilterMenu = false; fetchTodosData(refresh = true) })
-                    DropdownMenuItem(text = { Text("Belum Selesai") }, onClick = { filterDone = false; showFilterMenu = false; fetchTodosData(refresh = true) })
-                    
-                    Text("Urgensi", modifier = Modifier.padding(8.dp), fontWeight = FontWeight.Bold)
-                    DropdownMenuItem(text = { Text("Semua") }, onClick = { filterUrgency = null; showFilterMenu = false; fetchTodosData(refresh = true) })
-                    DropdownMenuItem(text = { Text("Low") }, onClick = { filterUrgency = "Low"; showFilterMenu = false; fetchTodosData(refresh = true) })
-                    DropdownMenuItem(text = { Text("Medium") }, onClick = { filterUrgency = "Medium"; showFilterMenu = false; fetchTodosData(refresh = true) })
-                    DropdownMenuItem(text = { Text("High") }, onClick = { filterUrgency = "High"; showFilterMenu = false; fetchTodosData(refresh = true) })
-                }
+            TextButton(onClick = { showFilterMenu = true }) {
+                Text("Ubah Filter", style = MaterialTheme.typography.labelLarge)
             }
         }
 
-        // Content
-        Box(
-            modifier = Modifier
-                .weight(1f)
-        ) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                items(todos) { todo ->
-                    TodoItemUI(todo, ::onOpen)
+        Box(modifier = Modifier.weight(1f)) {
+            if (todos.isEmpty() && !isLoading) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(painterResource(R.drawable.img_placeholder), contentDescription = null, modifier = Modifier.size(100.dp), tint = Color.Gray.copy(alpha = 0.3f))
+                    Spacer(Modifier.height(16.dp))
+                    Text("Belum ada tugas", color = Color.Gray)
                 }
-                if (hasMore) {
-                    item {
-                        CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp)
+                ) {
+                    items(todos) { todo ->
+                        TodoItemUI(todo) { RouteHelper.to(navController, "todos/${todo.id}") }
                     }
                 }
-            }
-
-            if (todos.isEmpty() && !isLoading) {
-                Text(
-                    text = "Tidak ada data!",
-                    modifier = Modifier.align(Alignment.Center).padding(16.dp)
-                )
             }
 
             FloatingActionButton(
@@ -251,66 +155,71 @@ fun TodosScreen(
                 Icon(Icons.Default.Add, contentDescription = "Tambah")
             }
         }
-        // Bottom Nav
         BottomNavComponent(navController = navController)
+    }
+
+    if (showFilterMenu) {
+        AlertDialog(
+            onDismissRequest = { showFilterMenu = false },
+            title = { Text("Filter Tugas") },
+            text = {
+                Column {
+                    Text("Status", fontWeight = FontWeight.Bold)
+                    Row {
+                        FilterChip(selected = filterDone == null, onClick = { filterDone = null }, label = { Text("Semua") })
+                        Spacer(Modifier.width(8.dp))
+                        FilterChip(selected = filterDone == true, onClick = { filterDone = true }, label = { Text("Selesai") })
+                        Spacer(Modifier.width(8.dp))
+                        FilterChip(selected = filterDone == false, onClick = { filterDone = false }, label = { Text("Belum") })
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    Text("Urgensi", fontWeight = FontWeight.Bold)
+                    Row {
+                        FilterChip(selected = filterUrgency == null, onClick = { filterUrgency = null }, label = { Text("Semua") })
+                        Spacer(Modifier.width(8.dp))
+                        FilterChip(selected = filterUrgency == "High", onClick = { filterUrgency = "High" }, label = { Text("High") })
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { 
+                    showFilterMenu = false
+                    todoViewModel.getAllTodos(authToken ?: "", searchQuery.text, filterDone, filterUrgency, true)
+                }) { Text("Terapkan") }
+            }
+        )
     }
 }
 
 @Composable
-fun TodoItemUI(
-    todo: ResponseTodoData,
-    onOpen: (String) -> Unit
-) {
+fun TodoItemUI(todo: ResponseTodoData, onClick: () -> Unit) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .clickable { onOpen(todo.id) },
-        shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onClick() },
+        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(16.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-        ) {
+        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             AsyncImage(
                 model = ToolsHelper.getTodoImage(todo.id, todo.updatedAt),
-                contentDescription = todo.title,
+                contentDescription = null,
+                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(12.dp)),
+                contentScale = ContentScale.Crop,
                 placeholder = painterResource(R.drawable.img_placeholder),
-                error = painterResource(R.drawable.img_placeholder),
-                modifier = Modifier.size(70.dp).clip(MaterialTheme.shapes.medium),
-                contentScale = ContentScale.Crop
+                error = painterResource(R.drawable.img_placeholder)
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = todo.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(text = todo.description, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(if (todo.isDone) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.tertiaryContainer)
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(text = if (todo.isDone) "Selesai" else "Belum", style = MaterialTheme.typography.labelSmall)
+                Text(todo.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(todo.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(8.dp))
+                Row {
+                    Badge(containerColor = if(todo.isDone) Color(0xFFE8F5E9) else Color(0xFFFFF3E0)) {
+                        Text(if(todo.isDone) "Selesai" else "Proses", color = if(todo.isDone) Color(0xFF2E7D32) else Color(0xFFE65100), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontSize = 10.sp)
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(
-                                when(todo.urgency) {
-                                    "High" -> MaterialTheme.colorScheme.errorContainer
-                                    "Medium" -> MaterialTheme.colorScheme.primaryContainer
-                                    else -> MaterialTheme.colorScheme.surfaceVariant
-                                }
-                            )
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(text = todo.urgency, style = MaterialTheme.typography.labelSmall)
+                    Spacer(Modifier.width(8.dp))
+                    Badge(containerColor = when(todo.urgency) { "High" -> Color(0xFFFFEBEE); "Medium" -> Color(0xFFE3F2FD); else -> Color(0xFFF5F5F5) }) {
+                        Text(todo.urgency, color = when(todo.urgency) { "High" -> Color(0xFFC62828); "Medium" -> Color(0xFF1565C0); else -> Color.DarkGray }, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), fontSize = 10.sp)
                     }
                 }
             }

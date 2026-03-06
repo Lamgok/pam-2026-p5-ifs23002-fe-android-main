@@ -41,7 +41,6 @@ import org.delcom.pam_p5_ifs23002.ui.components.StatusCard
 import org.delcom.pam_p5_ifs23002.ui.components.TopAppBarComponent
 import org.delcom.pam_p5_ifs23002.ui.components.TopAppBarMenuItem
 import org.delcom.pam_p5_ifs23002.ui.theme.DelcomTheme
-import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthActionUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthLogoutUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthViewModel
@@ -54,115 +53,89 @@ fun HomeScreen(
     authViewModel: AuthViewModel,
     todoViewModel: TodoViewModel
 ) {
-    // Ambil data dari viewmodel
     val uiStateAuth by authViewModel.uiState.collectAsState()
     val uiStateTodo by todoViewModel.uiState.collectAsState()
 
-    var isLoading by remember { mutableStateOf(false) }
-    var isFreshToken by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
     var authToken by remember { mutableStateOf<String?>(null) }
     var todos by remember { mutableStateOf<List<ResponseTodoData>>(emptyList()) }
 
+    // 1. Inisialisasi: Ambil token saat pertama kali masuk
     LaunchedEffect(Unit) {
-        if (isLoading) return@LaunchedEffect
-
-        isLoading = true
-        isFreshToken = true
-
-        uiStateAuth.authLogout = AuthLogoutUIState.Loading
-
         authViewModel.loadTokenFromPreferences()
     }
 
-    fun onLogout(token: String){
-        isLoading = true
-        authViewModel.logout(token)
-    }
-
+    // 2. Monitoring Auth State
     LaunchedEffect(uiStateAuth.auth) {
-        if (!isLoading) {
-            return@LaunchedEffect
-        }
-
-        if (uiStateAuth.auth !is AuthUIState.Loading) {
-            if (uiStateAuth.auth is AuthUIState.Success) {
-                if (isFreshToken) {
-                    val dataToken = (uiStateAuth.auth as AuthUIState.Success).data
-                    authViewModel.refreshToken(dataToken.authToken, dataToken.refreshToken)
-                    isFreshToken = false
-                } else if(uiStateAuth.authRefreshToken is AuthActionUIState.Success) {
-                    val newToken = (uiStateAuth.auth as AuthUIState.Success).data.authToken
-                    if (authToken != newToken) {
-                        authToken = (uiStateAuth.auth as AuthUIState.Success).data.authToken
-                        todoViewModel.getAllTodos(authToken!!, refresh = true)
-                    }
+        when (val state = uiStateAuth.auth) {
+            is AuthUIState.Success -> {
+                // Jika token ditemukan, simpan dan ambil data todos
+                if (authToken != state.data.authToken) {
+                    authToken = state.data.authToken
+                    todoViewModel.getAllTodos(state.data.authToken, refresh = true)
                 }
-            } else {
-                onLogout("")
             }
+            is AuthUIState.Error -> {
+                // Jika tidak ada token, arahkan ke login
+                RouteHelper.to(navController, ConstHelper.RouteNames.AuthLogin.path, true)
+            }
+            else -> Unit
         }
     }
 
+    // 3. Monitoring Todo State
     LaunchedEffect(uiStateTodo.todos) {
         if (uiStateTodo.todos is TodosUIState.Success) {
             todos = (uiStateTodo.todos as TodosUIState.Success).data
             isLoading = false
+        } else if (uiStateTodo.todos is TodosUIState.Error) {
+            isLoading = false
+            // Opsional: Tampilkan snackbar jika gagal ambil data
         }
     }
 
+    // 4. Monitoring Logout
     LaunchedEffect(uiStateAuth.authLogout) {
-        if (uiStateAuth.authLogout !is AuthLogoutUIState.Loading) {
-            RouteHelper.to(
-                navController,
-                ConstHelper.RouteNames.AuthLogin.path,
-                true
-            )
+        if (uiStateAuth.authLogout is AuthLogoutUIState.Success) {
+            RouteHelper.to(navController, ConstHelper.RouteNames.AuthLogin.path, true)
         }
     }
 
-    if (isLoading || authToken == null || isFreshToken) {
+    if (isLoading || authToken == null) {
         LoadingUI()
-        return
-    }
-
-    // Menu Top App Bar
-    val menuItems = listOf(
-        TopAppBarMenuItem(
-            text = "Profile",
-            icon = Icons.Filled.Person,
-            route = ConstHelper.RouteNames.Profile.path
-        ),
-        TopAppBarMenuItem(
-            text = "Logout",
-            icon = Icons.AutoMirrored.Filled.Logout,
-            route = null,
-            onClick = {
-                onLogout(authToken ?: "")
-            }
+    } else {
+        val menuItems = listOf(
+            TopAppBarMenuItem(
+                text = "Profile",
+                icon = Icons.Filled.Person,
+                route = ConstHelper.RouteNames.Profile.path
+            ),
+            TopAppBarMenuItem(
+                text = "Logout",
+                icon = Icons.AutoMirrored.Filled.Logout,
+                route = null,
+                onClick = {
+                    authViewModel.logout(authToken ?: "")
+                }
+            )
         )
-    )
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // Top App Bar
-        TopAppBarComponent(
-            navController = navController,
-            title = "Home",
-            showBackButton = false,
-            customMenuItems = menuItems
-        )
-        // Content
-        Box(
+        Column(
             modifier = Modifier
-                .weight(1f)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background)
         ) {
-            HomeUI(todos)
+            TopAppBarComponent(
+                navController = navController,
+                title = "Home",
+                showBackButton = false,
+                customMenuItems = menuItems
+            )
+            Box(modifier = Modifier.weight(1f)) {
+                HomeUI(todos)
+            }
+            BottomNavComponent(navController = navController)
         }
-        // Bottom Nav
-        BottomNavComponent(navController = navController)
     }
 }
 
@@ -172,11 +145,7 @@ fun HomeUI(todos: List<ResponseTodoData>) {
     val doneTodos = todos.count { it.isDone }
     val pendingTodos = totalTodos - doneTodos
 
-    Column(
-        modifier = Modifier.padding(top = 16.dp)
-    )
-    {
-        // Header App
+    Column(modifier = Modifier.padding(top = 16.dp)) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -200,29 +169,22 @@ fun HomeUI(todos: List<ResponseTodoData>) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Quick Status Cards
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-
-            // Total Todos
             StatusCard(
                 title = "Total",
                 value = totalTodos.toString(),
                 icon = Icons.AutoMirrored.Filled.List
             )
-
-            // Selesai
             StatusCard(
                 title = "Selesai",
                 value = doneTodos.toString(),
                 icon = Icons.Default.CheckCircle
             )
-
-            // Belum
             StatusCard(
                 title = "Belum",
                 value = pendingTodos.toString(),
