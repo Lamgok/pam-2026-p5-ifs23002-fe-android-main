@@ -9,7 +9,11 @@ plugins {
 
 android {
     namespace = "org.delcom.pam_p5_ifs23002"
-    compileSdk = 36
+    compileSdk {
+        version = release(36) {
+            minorApiLevel = 1
+        }
+    }
 
     defaultConfig {
         applicationId = "org.delcom.pam_p5_ifs23002"

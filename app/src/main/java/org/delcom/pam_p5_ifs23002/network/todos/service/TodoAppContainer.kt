@@ -21,10 +21,9 @@ class TodoAppContainer: ITodoAppContainer {
             addInterceptor(loggingInterceptor)
         }
 
-        // Memperpendek timeout agar user tidak menunggu terlalu lama jika koneksi bermasalah
-        connectTimeout(30, TimeUnit.SECONDS)
-        readTimeout(30, TimeUnit.SECONDS)
-        writeTimeout(30, TimeUnit.SECONDS)
+        connectTimeout(2, TimeUnit.MINUTES)
+        readTimeout(2, TimeUnit.MINUTES)
+        writeTimeout(2, TimeUnit.MINUTES)
     }.build()
 
     private val retrofit = Retrofit.Builder()

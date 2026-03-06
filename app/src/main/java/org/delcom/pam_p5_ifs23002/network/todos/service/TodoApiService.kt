@@ -13,6 +13,7 @@ import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseAuthLogin
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseAuthRegister
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodo
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoAdd
+import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoStats
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodos
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseUser
 import retrofit2.http.Body
@@ -96,11 +97,16 @@ interface TodoApiService {
     suspend fun getTodos(
         @Header("Authorization") authToken: String,
         @Query("search") search: String? = null,
-        @Query("isDone") isDone: Boolean? = null,
-        @Query("urgency") urgency: String? = null,
-        @Query("page") page: Int? = null,
-        @Query("perPage") perPage: Int? = null
+        @Query("page") page: Int = 1,
+        @Query("perPage") perPage: Int = 10,
+        @Query("filter") filter: String? = null,
+        @Query("urgency") urgency: Int? = null
     ): ResponseMessage<ResponseTodos?>
+
+    @GET("todos/stats")
+    suspend fun getTodoStats(
+        @Header("Authorization") authToken: String
+    ): ResponseMessage<ResponseTodoStats?>
 
     // Menambahkan data todo
     @POST("todos")

@@ -115,7 +115,6 @@ fun TodosEditScreen(
         title: String,
         description: String,
         isDone: Boolean,
-        urgency: String
     ) {
         isLoading = true
 
@@ -124,8 +123,7 @@ fun TodosEditScreen(
             todoId = todoId,
             title = title,
             description = description,
-            isDone = isDone,
-            urgency = urgency
+            isDone = isDone
         )
     }
 
@@ -200,7 +198,6 @@ fun TodosEditUI(
         String,
         String,
         Boolean,
-        String
     ) -> Unit
 ) {
     val alertState = remember { mutableStateOf(AlertState()) }
@@ -208,7 +205,6 @@ fun TodosEditUI(
     var dataTitle by remember { mutableStateOf(todo.title) }
     var dataDescription by remember { mutableStateOf(todo.description) }
     var dataIsDone by remember { mutableStateOf(todo.isDone) }
-    var dataUrgency by remember { mutableStateOf(todo.urgency) }
 
     Column(
         modifier = Modifier
@@ -241,42 +237,6 @@ fun TodosEditUI(
                 imeAction = ImeAction.Done
             ),
         )
-
-        // Urgency
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Urgency",
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = dataUrgency == "Low",
-                    onClick = { dataUrgency = "Low" }
-                )
-                Text("Low")
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                RadioButton(
-                    selected = dataUrgency == "Medium",
-                    onClick = { dataUrgency = "Medium" }
-                )
-                Text("Medium")
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                RadioButton(
-                    selected = dataUrgency == "High",
-                    onClick = { dataUrgency = "High" }
-                )
-                Text("High")
-            }
-        }
 
         // Is Done
         Column(
@@ -365,8 +325,7 @@ fun TodosEditUI(
                 onSave(
                     dataTitle,
                     dataDescription,
-                    dataIsDone,
-                    dataUrgency
+                    dataIsDone
                 )
             },
             modifier = Modifier
@@ -410,4 +369,10 @@ fun TodosEditUI(
 @Preview(showBackground = true, name = "Light Mode")
 @Composable
 fun PreviewTodosEditUI() {
+//    DelcomTheme {
+//        TodosEditUI(
+//            todos = DummyData.getTodosEditData(),
+//            onOpen = {}
+//        )
+//    }
 }

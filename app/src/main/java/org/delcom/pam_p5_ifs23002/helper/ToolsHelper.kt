@@ -11,14 +11,12 @@ import org.delcom.pam_p5_ifs23002.BuildConfig
 import java.io.File
 
 object ToolsHelper {
-    fun getTodoImage(todoId: String, t: String = ""): String {
-        val baseUrl = BuildConfig.BASE_URL.removeSuffix("/")
-        return if (t.isEmpty()) "$baseUrl/images/todos/$todoId" else "$baseUrl/images/todos/$todoId?t=$t"
+    fun getTodoImage(todoId: String, t: String = "0"): String{
+        return "${BuildConfig.BASE_URL}images/todos/${todoId}?t=${t}"
     }
 
-    fun getUserImage(userId: String, t: String = ""): String {
-        val baseUrl = BuildConfig.BASE_URL.removeSuffix("/")
-        return if (t.isEmpty()) "$baseUrl/images/users/$userId" else "$baseUrl/images/users/$userId?t=$t"
+    fun getUserImage(userId: String, t: String = "0"): String{
+        return "${BuildConfig.BASE_URL}images/users/${userId}?t=${t}"
     }
 
     fun String.toRequestBodyText(): RequestBody {

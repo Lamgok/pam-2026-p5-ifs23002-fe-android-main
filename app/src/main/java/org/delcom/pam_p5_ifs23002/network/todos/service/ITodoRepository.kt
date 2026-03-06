@@ -13,6 +13,7 @@ import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseAuthLogin
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseAuthRegister
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodo
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoAdd
+import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoStats
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodos
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseUser
 
@@ -68,11 +69,15 @@ interface ITodoRepository {
     suspend fun getTodos(
         authToken: String,
         search: String? = null,
-        isDone: Boolean? = null,
-        urgency: String? = null,
-        page: Int? = null,
-        perPage: Int? = null
+        page: Int = 1,
+        perPage: Int = 10,
+        filter: String? = null,
+        urgency: Int? = null
     ): ResponseMessage<ResponseTodos?>
+
+    suspend fun getTodoStats(
+        authToken: String
+    ): ResponseMessage<ResponseTodoStats?>
 
     suspend fun postTodo(
         authToken: String,
@@ -100,4 +105,6 @@ interface ITodoRepository {
         authToken: String,
         todoId: String
     ): ResponseMessage<String?>
+
+
 }

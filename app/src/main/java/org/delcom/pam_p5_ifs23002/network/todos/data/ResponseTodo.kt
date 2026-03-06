@@ -19,8 +19,8 @@ data class ResponseTodoData(
     val title: String,
     val description: String,
     val isDone: Boolean = false,
-    val urgency: String = "Low",
     val cover: String? = null,
+    val urgency: Int = 1,
     val createdAt: String = "",
     var updatedAt: String = ""
 )
@@ -28,4 +28,16 @@ data class ResponseTodoData(
 @Serializable
 data class ResponseTodoAdd (
     val todoId: String
+)
+
+@Serializable
+data class ResponseTodoStats (
+    val stats: ResponseTodoStatsData
+)
+
+@Serializable
+data class ResponseTodoStatsData(
+    val total: Long = 0,
+    val complete: Long = 0,
+    val active: Long = 0
 )

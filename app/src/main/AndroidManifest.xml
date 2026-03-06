@@ -16,6 +16,7 @@
         android:roundIcon="@drawable/img_logo"
         android:supportsRtl="true"
         android:theme="@style/Theme.DelcomTodos">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

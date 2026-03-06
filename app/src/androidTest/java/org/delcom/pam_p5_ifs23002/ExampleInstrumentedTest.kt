@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("org.delcom.pam_p4_ifs23002", appContext.packageName)
+        assertEquals("org.delcom.pam_p5_ifs23010", appContext.packageName)
     }
 }

@@ -22,7 +22,8 @@ import androidx.compose.ui.unit.dp
 fun StatusCard(
     title: String,
     value: String,
-    icon: ImageVector
+    icon: ImageVector,
+    modifier: Modifier = Modifier // Pastikan parameter modifier ada
 ) {
     Card(
         modifier = Modifier

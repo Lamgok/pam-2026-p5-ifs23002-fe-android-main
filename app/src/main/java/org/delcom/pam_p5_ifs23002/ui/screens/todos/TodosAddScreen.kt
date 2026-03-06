@@ -4,13 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -22,7 +20,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -55,6 +52,10 @@ import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthViewModel
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.TodoActionUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.TodoViewModel
+import androidx.compose.runtime.mutableIntStateOf // Import khusus untuk angka
+import androidx.compose.material3.RadioButton  // Pastikan RadioButton juga di-import
+import androidx.compose.foundation.layout.Row // Untuk Row
+import androidx.compose.foundation.clickable      // Untuk clickable
 
 @Composable
 fun TodosAddScreen(
@@ -72,6 +73,8 @@ fun TodosAddScreen(
     val authToken = remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
+        // Reset status todo action
+
         if(uiStateAuth.auth !is AuthUIState.Success){
             RouteHelper.to(
                 navController,
@@ -89,7 +92,7 @@ fun TodosAddScreen(
     fun onSave(
         title: String,
         description: String,
-        urgency: String
+        urgency: Int // [TAMBAHKAN INI]
     ) {
         if(authToken.value == null){
             return
@@ -100,14 +103,14 @@ fun TodosAddScreen(
         tmpTodo = ResponseTodoData(
             title = title,
             description = description,
-            urgency = urgency
+            urgency = urgency // [TAMBAHKAN INI]
         )
 
         todoViewModel.postTodo(
             authToken = authToken.value!!,
             title = title,
             description = description,
-            urgency = urgency
+            urgency = urgency // [TAMBAHKAN INI]
         )
     }
 
@@ -174,16 +177,17 @@ fun TodosAddScreen(
 fun TodosAddUI(
     tmpTodo: ResponseTodoData?,
     onSave: (
-        String,
-        String,
-        String
+        String, // Title
+        String, // Description
+        Int     // Urgency [BARU]
     ) -> Unit
 ) {
     val alertState = remember { mutableStateOf(AlertState()) }
 
     var dataTitle by remember { mutableStateOf(tmpTodo?.title ?: "") }
     var dataDescription by remember { mutableStateOf(tmpTodo?.description ?: "") }
-    var dataUrgency by remember { mutableStateOf(tmpTodo?.urgency ?: "Low") }
+    // [BARU] Inisialisasi state urgensi (default 1 = Low)
+    var dataUrgency by remember { mutableIntStateOf(tmpTodo?.urgency ?: 1) }
 
     Column(
         modifier = Modifier
@@ -197,79 +201,30 @@ fun TodosAddUI(
             value = dataTitle,
             onValueChange = { dataTitle = it },
             colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
-                cursorColor = MaterialTheme.colorScheme.primaryContainer,
-                unfocusedBorderColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                cursorColor = MaterialTheme.colorScheme.primary,
             ),
-            label = {
-                Text(
-                    text = "Title",
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            },
-            modifier = Modifier
-                .fillMaxWidth(),
+            label = { Text(text = "Title") },
+            modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Done
+                imeAction = ImeAction.Next
             ),
         )
-
-        // Urgency
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Urgency",
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = dataUrgency == "Low",
-                    onClick = { dataUrgency = "Low" }
-                )
-                Text("Low")
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                RadioButton(
-                    selected = dataUrgency == "Medium",
-                    onClick = { dataUrgency = "Medium" }
-                )
-                Text("Medium")
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                RadioButton(
-                    selected = dataUrgency == "High",
-                    onClick = { dataUrgency = "High" }
-                )
-                Text("High")
-            }
-        }
 
         // Description
         OutlinedTextField(
             value = dataDescription,
             onValueChange = { dataDescription = it },
             colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                unfocusedTextColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                focusedBorderColor = MaterialTheme.colorScheme.primaryContainer,
-                cursorColor = MaterialTheme.colorScheme.primaryContainer,
-                unfocusedBorderColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                cursorColor = MaterialTheme.colorScheme.primary,
             ),
-            label = {
-                Text(
-                    text = "Description",
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            },
+            label = { Text(text = "Description") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(120.dp),
@@ -281,34 +236,51 @@ fun TodosAddUI(
             minLines = 3
         )
 
-        Spacer(modifier = Modifier.height(64.dp))
+        // [BARU] Pilihan Urgensi
+        Text(
+            text = "Tingkat Urgensi",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            val urgencies = listOf("Low" to 1, "Medium" to 2, "High" to 3)
+            urgencies.forEach { (label, value) ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { dataUrgency = value }
+                ) {
+                    RadioButton(
+                        selected = (dataUrgency == value),
+                        onClick = { dataUrgency = value }
+                    )
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(80.dp))
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        // Floating Action Button
+    Box(modifier = Modifier.fillMaxSize()) {
         FloatingActionButton(
             onClick = {
                 if(dataTitle.isEmpty()) {
-                    AlertHelper.show(
-                        alertState,
-                        AlertType.ERROR,
-                        "Judul tidak boleh kosong!"
-                    )
+                    AlertHelper.show(alertState, AlertType.ERROR, "Judul tidak boleh kosong!")
                     return@FloatingActionButton
                 }
 
                 if(dataDescription.isEmpty()) {
-                    AlertHelper.show(
-                        alertState,
-                        AlertType.ERROR,
-                        "Deskripsi tidak boleh kosong!"
-                    )
+                    AlertHelper.show(alertState, AlertType.ERROR, "Deskripsi tidak boleh kosong!")
                     return@FloatingActionButton
                 }
 
+                // Kirim 3 data ke fungsi onSave
                 onSave(
                     dataTitle,
                     dataDescription,
@@ -316,36 +288,23 @@ fun TodosAddUI(
                 )
             },
             modifier = Modifier
-                .align(Alignment.BottomEnd) // pojok kanan bawah
-                .padding(16.dp) // jarak dari tepi
-            ,
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary
         ) {
-            Icon(
-                imageVector = Icons.Default.Save,
-                contentDescription = "Simpan Data"
-            )
+            Icon(imageVector = Icons.Default.Save, contentDescription = "Simpan Data")
         }
     }
 
+    // Alert Dialog tetap sama
     if (alertState.value.isVisible) {
         AlertDialog(
-            onDismissRequest = {
-                AlertHelper.dismiss(alertState)
-            },
-            title = {
-                Text(alertState.value.type.title)
-            },
-            text = {
-                Text(alertState.value.message)
-            },
+            onDismissRequest = { AlertHelper.dismiss(alertState) },
+            title = { Text(alertState.value.type.title) },
+            text = { Text(alertState.value.message) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        AlertHelper.dismiss(alertState)
-                    }
-                ) {
+                TextButton(onClick = { AlertHelper.dismiss(alertState) }) {
                     Text("OK")
                 }
             }
@@ -353,7 +312,14 @@ fun TodosAddUI(
     }
 }
 
+
 @Preview(showBackground = true, name = "Light Mode")
 @Composable
 fun PreviewTodosAddUI() {
+//    DelcomTheme {
+//        TodosAddUI(
+//            todos = DummyData.getTodosAddData(),
+//            onOpen = {}
+//        )
+//    }
 }

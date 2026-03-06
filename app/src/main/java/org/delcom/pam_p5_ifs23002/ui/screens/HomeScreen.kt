@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -34,18 +36,18 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.delcom.pam_p5_ifs23002.helper.ConstHelper
 import org.delcom.pam_p5_ifs23002.helper.RouteHelper
-import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoData
 import org.delcom.pam_p5_ifs23002.ui.components.BottomNavComponent
 import org.delcom.pam_p5_ifs23002.ui.components.LoadingUI
 import org.delcom.pam_p5_ifs23002.ui.components.StatusCard
 import org.delcom.pam_p5_ifs23002.ui.components.TopAppBarComponent
 import org.delcom.pam_p5_ifs23002.ui.components.TopAppBarMenuItem
 import org.delcom.pam_p5_ifs23002.ui.theme.DelcomTheme
+import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthActionUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthLogoutUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthViewModel
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.TodoViewModel
-import org.delcom.pam_p5_ifs23002.ui.viewmodels.TodosUIState
+import org.delcom.pam_p5_ifs23002.ui.viewmodels.StatsUIState
 
 @Composable
 fun HomeScreen(
@@ -53,99 +55,103 @@ fun HomeScreen(
     authViewModel: AuthViewModel,
     todoViewModel: TodoViewModel
 ) {
+    // Ambil data dari viewmodel
     val uiStateAuth by authViewModel.uiState.collectAsState()
     val uiStateTodo by todoViewModel.uiState.collectAsState()
 
-    var isLoading by remember { mutableStateOf(true) }
+    var isLoading by remember { mutableStateOf(false) }
+    var isFreshToken by remember { mutableStateOf(false) }
     var authToken by remember { mutableStateOf<String?>(null) }
-    var todos by remember { mutableStateOf<List<ResponseTodoData>>(emptyList()) }
 
-    // 1. Inisialisasi: Ambil token saat pertama kali masuk
     LaunchedEffect(Unit) {
+        if (isLoading) return@LaunchedEffect
+
+        isLoading = true
+        isFreshToken = true
+        uiStateAuth.authLogout = AuthLogoutUIState.Loading
         authViewModel.loadTokenFromPreferences()
     }
 
-    // 2. Monitoring Auth State
+    // Ambil data statistik saat token tersedia
+    LaunchedEffect(authToken) {
+        authToken?.let {
+            todoViewModel.getTodoStats(it)
+        }
+    }
+
+    fun onLogout(token: String){
+        isLoading = true
+        authViewModel.logout(token)
+    }
+
     LaunchedEffect(uiStateAuth.auth) {
-        when (val state = uiStateAuth.auth) {
-            is AuthUIState.Success -> {
-                // Jika token ditemukan, simpan dan ambil data todos
-                if (authToken != state.data.authToken) {
-                    authToken = state.data.authToken
-                    todoViewModel.getAllTodos(state.data.authToken, refresh = true)
+        if (!isLoading) {
+            return@LaunchedEffect
+        }
+
+        if (uiStateAuth.auth !is AuthUIState.Loading) {
+            if (uiStateAuth.auth is AuthUIState.Success) {
+                if (isFreshToken) {
+                    val dataToken = (uiStateAuth.auth as AuthUIState.Success).data
+                    authViewModel.refreshToken(dataToken.authToken, dataToken.refreshToken)
+                    isFreshToken = false
+                } else if(uiStateAuth.authRefreshToken is AuthActionUIState.Success) {
+                    val newToken = (uiStateAuth.auth as AuthUIState.Success).data.authToken
+                    if (authToken != newToken) {
+                        authToken = (uiStateAuth.auth as AuthUIState.Success).data.authToken
+                    }
+                    isLoading = false
                 }
+            } else {
+                onLogout("")
             }
-            is AuthUIState.Error -> {
-                // Jika tidak ada token, arahkan ke login
-                RouteHelper.to(navController, ConstHelper.RouteNames.AuthLogin.path, true)
-            }
-            else -> Unit
         }
     }
 
-    // 3. Monitoring Todo State
-    LaunchedEffect(uiStateTodo.todos) {
-        if (uiStateTodo.todos is TodosUIState.Success) {
-            todos = (uiStateTodo.todos as TodosUIState.Success).data
-            isLoading = false
-        } else if (uiStateTodo.todos is TodosUIState.Error) {
-            isLoading = false
-            // Opsional: Tampilkan snackbar jika gagal ambil data
-        }
-    }
-
-    // 4. Monitoring Logout
     LaunchedEffect(uiStateAuth.authLogout) {
-        if (uiStateAuth.authLogout is AuthLogoutUIState.Success) {
+        if (uiStateAuth.authLogout !is AuthLogoutUIState.Loading) {
             RouteHelper.to(navController, ConstHelper.RouteNames.AuthLogin.path, true)
         }
     }
 
-    if (isLoading || authToken == null) {
+    if (isLoading || authToken == null || isFreshToken) {
         LoadingUI()
-    } else {
-        val menuItems = listOf(
-            TopAppBarMenuItem(
-                text = "Profile",
-                icon = Icons.Filled.Person,
-                route = ConstHelper.RouteNames.Profile.path
-            ),
-            TopAppBarMenuItem(
-                text = "Logout",
-                icon = Icons.AutoMirrored.Filled.Logout,
-                route = null,
-                onClick = {
-                    authViewModel.logout(authToken ?: "")
-                }
-            )
-        )
+        return
+    }
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
+    // Menu Top App Bar
+    val menuItems = listOf(
+        TopAppBarMenuItem(text = "Profile", icon = Icons.Filled.Person, route = ConstHelper.RouteNames.Profile.path),
+        TopAppBarMenuItem(text = "Logout", icon = Icons.AutoMirrored.Filled.Logout, route = null, onClick = { onLogout(authToken ?: "") })
+    )
+
+    Column(
+        modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
+    ) {
+        TopAppBarComponent(
+            navController = navController,
+            title = "Home",
+            showBackButton = false,
+            customMenuItems = menuItems
+        )
+        // Content
+        Box(
+            modifier = Modifier.weight(1f)
         ) {
-            TopAppBarComponent(
-                navController = navController,
-                title = "Home",
-                showBackButton = false,
-                customMenuItems = menuItems
-            )
-            Box(modifier = Modifier.weight(1f)) {
-                HomeUI(todos)
-            }
-            BottomNavComponent(navController = navController)
+            // Kita pindahkan data statistik dari state ke fungsi HomeUI
+            HomeUI(statsState = uiStateTodo.stats)
         }
+        BottomNavComponent(navController = navController)
     }
 }
 
+// Tambahkan parameter statsState untuk menerima data dari ViewModel
 @Composable
-fun HomeUI(todos: List<ResponseTodoData>) {
-    val totalTodos = todos.size
-    val doneTodos = todos.count { it.isDone }
-    val pendingTodos = totalTodos - doneTodos
-
-    Column(modifier = Modifier.padding(top = 16.dp)) {
+fun HomeUI(statsState: StatsUIState) {
+    Column(
+        modifier = Modifier.padding(top = 16.dp)
+    ) {
+        // Header App
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -169,27 +175,51 @@ fun HomeUI(todos: List<ResponseTodoData>) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatusCard(
-                title = "Total",
-                value = totalTodos.toString(),
-                icon = Icons.AutoMirrored.Filled.List
-            )
-            StatusCard(
-                title = "Selesai",
-                value = doneTodos.toString(),
-                icon = Icons.Default.CheckCircle
-            )
-            StatusCard(
-                title = "Belum",
-                value = pendingTodos.toString(),
-                icon = Icons.Default.Schedule
-            )
+        // Cek kondisi status data statistik
+        when (statsState) {
+            is StatsUIState.Loading -> {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+            is StatsUIState.Error -> {
+                Text(
+                    text = "Gagal memuat: ${statsState.message}",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+            is StatsUIState.Success -> {
+                // Quick Status Cards dengan Data Asli
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Total Todos
+                    StatusCard(
+                        title = "Total",
+                        value = statsState.data.total.toString(),
+                        icon = Icons.AutoMirrored.Filled.List
+                    )
+
+                    // Selesai
+                    StatusCard(
+                        title = "Selesai",
+                        value = statsState.data.complete.toString(),
+                        icon = Icons.Default.CheckCircle
+                    )
+
+                    // Belum
+                    StatusCard(
+                        title = "Belum",
+                        value = statsState.data.active.toString(),
+                        icon = Icons.Default.Schedule
+                    )
+                }
+            }
         }
     }
 }
@@ -198,6 +228,6 @@ fun HomeUI(todos: List<ResponseTodoData>) {
 @Composable
 fun PreviewHomeUI() {
     DelcomTheme {
-        HomeUI(emptyList())
+        HomeUI(statsState = StatsUIState.Loading) // Isi dengan loading untuk preview
     }
 }
