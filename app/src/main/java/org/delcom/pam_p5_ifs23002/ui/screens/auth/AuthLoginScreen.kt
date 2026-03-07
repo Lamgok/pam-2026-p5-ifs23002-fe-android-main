@@ -76,6 +76,7 @@ import org.delcom.pam_p5_ifs23002.helper.RouteHelper
 import org.delcom.pam_p5_ifs23002.helper.SuspendHelper
 import org.delcom.pam_p5_ifs23002.ui.components.LoadingUI
 import org.delcom.pam_p5_ifs23002.ui.theme.DelcomTheme
+import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthActionUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthViewModel
 
@@ -87,7 +88,6 @@ fun AuthLoginScreen(
     authViewModel: AuthViewModel,
 ) {
     var isProcessLogin by remember { mutableStateOf(false) }
-//    val context: Context = LocalContext.current
 
     val uiStateAuth by authViewModel.uiState.collectAsState()
 
@@ -161,8 +161,6 @@ private fun AuthLoginUI(
     navController: NavHostController,
     onLogin: (username: String, password: String) -> Unit
 ) {
-//    val context = LocalContext.current
-
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }

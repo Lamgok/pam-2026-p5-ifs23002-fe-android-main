@@ -1,5 +1,6 @@
 package org.delcom.pam_p5_ifs23002.ui.viewmodels
 
+import android.util.Log
 import androidx.annotation.Keep
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,12 +10,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import org.delcom.pam_p5_ifs23002.network.todos.data.RequestTodo
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoData
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseUserData
 import org.delcom.pam_p5_ifs23002.network.todos.service.ITodoRepository
 import javax.inject.Inject
-import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoStatsData // pastikan di-import
+import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoStatsData
 import org.delcom.pam_p5_ifs23002.network.todos.data.RequestUserChangePassword
 import org.delcom.pam_p5_ifs23002.network.todos.data.RequestUserChange
 
@@ -111,7 +113,7 @@ class TodoViewModel @Inject constructor(
         authToken: String,
         search: String? = null,
         filter: String? = null,
-        urgency: Int? = null // [BARU]
+        urgency: Int? = null
     ) {
         isFetching = false
         currentPage = 1
@@ -126,9 +128,8 @@ class TodoViewModel @Inject constructor(
         authToken: String,
         search: String? = null,
         filter: String? = currentFilter,
-        urgency: Int? = currentUrgency // [BARU]
+        urgency: Int? = currentUrgency
     ) {
-        // Jangan request jika data sudah habis ATAU sedang ada proses mengambil data
         if (isLastPage || isFetching) return
 
         isFetching = true
@@ -140,7 +141,6 @@ class TodoViewModel @Inject constructor(
 
             _uiState.update { it ->
                 val tmpState = runCatching {
-                    // Pastikan repository.getTodos sudah menerima parameter urgency di posisi terakhir
                     repository.getTodos(authToken, search, currentPage, 10, filter, urgency)
                 }.fold(
                     onSuccess = { response ->
@@ -150,7 +150,6 @@ class TodoViewModel @Inject constructor(
                             val newTodos = response.data?.todos ?: emptyList()
                             if (newTodos.size < 10) isLastPage = true
 
-                            // Filter keamanan: Jangan masukkan Todo yang ID-nya sudah ada di list (anti-duplikat)
                             val uniqueTodos = newTodos.filter { newTodo ->
                                 currentTodosList.none { existingTodo -> existingTodo.id == newTodo.id }
                             }
@@ -200,7 +199,7 @@ class TodoViewModel @Inject constructor(
         authToken: String,
         title: String,
         description: String,
-        urgency: Int // [BARU] Tambahkan parameter urgency
+        urgency: Int
     ) {
         viewModelScope.launch {
             _uiState.update {
@@ -215,7 +214,7 @@ class TodoViewModel @Inject constructor(
                         RequestTodo(
                             title = title,
                             description = description,
-                            urgency = urgency // [BARU] Masukkan ke dalam request
+                            urgency = urgency
                         )
                     )
                 }.fold(
@@ -389,7 +388,6 @@ class TodoViewModel @Inject constructor(
             _uiState.update { it.copy(profileChange = TodoActionUIState.Loading) }
             _uiState.update { state ->
                 val tmpState = runCatching {
-                    // Mengirimkan objek request yang sudah mendukung field 'about'
                     repository.putUserMe(authToken, RequestUserChange(name, username, about))
                 }.fold(
                     onSuccess = {

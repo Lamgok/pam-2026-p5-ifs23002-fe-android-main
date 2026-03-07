@@ -1,6 +1,7 @@
 package org.delcom.pam_p5_ifs23002.network.todos.service
 
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import org.delcom.pam_p5_ifs23002.network.data.ResponseMessage
 import org.delcom.pam_p5_ifs23002.network.todos.data.RequestAuthLogin
 import org.delcom.pam_p5_ifs23002.network.todos.data.RequestAuthLogout
@@ -16,6 +17,7 @@ import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoAdd
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoStats
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodos
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseUser
+import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseUserData
 
 interface ITodoRepository {
 
