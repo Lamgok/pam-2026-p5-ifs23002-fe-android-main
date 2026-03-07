@@ -37,6 +37,7 @@ fun RippleLoading(
     val density = LocalDensity.current
     val circleSizePx = with(density) { circleSize.toPx() }
     val maxSizePx = with(density) { maxSize.toPx() }
+//    val midSizePx = circleSizePx * 2.1875f // ~70px if circleSize is 32px
 
     Box(
         modifier = modifier.size(maxSize + 40.dp),

@@ -17,7 +17,6 @@ import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoStats
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodoAdd
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseTodos
 import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseUser
-import org.delcom.pam_p5_ifs23002.network.todos.data.ResponseUserData
 
 class TodoRepository(
     private val apiService: TodoApiService

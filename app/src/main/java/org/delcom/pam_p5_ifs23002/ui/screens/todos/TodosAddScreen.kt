@@ -1,11 +1,9 @@
 package org.delcom.pam_p5_ifs23002.ui.screens.todos
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,7 +20,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -56,6 +52,10 @@ import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.AuthViewModel
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.TodoActionUIState
 import org.delcom.pam_p5_ifs23002.ui.viewmodels.TodoViewModel
+import androidx.compose.runtime.mutableIntStateOf // Import khusus untuk angka
+import androidx.compose.material3.RadioButton  // Pastikan RadioButton juga di-import
+import androidx.compose.foundation.layout.Row // Untuk Row
+import androidx.compose.foundation.clickable      // Untuk clickable
 
 @Composable
 fun TodosAddScreen(
@@ -92,7 +92,7 @@ fun TodosAddScreen(
     fun onSave(
         title: String,
         description: String,
-        urgency: Int
+        urgency: Int // [TAMBAHKAN INI]
     ) {
         if(authToken.value == null){
             return
@@ -103,14 +103,14 @@ fun TodosAddScreen(
         tmpTodo = ResponseTodoData(
             title = title,
             description = description,
-            urgency = urgency
+            urgency = urgency // [TAMBAHKAN INI]
         )
 
         todoViewModel.postTodo(
             authToken = authToken.value!!,
             title = title,
             description = description,
-            urgency = urgency
+            urgency = urgency // [TAMBAHKAN INI]
         )
     }
 
@@ -179,13 +179,14 @@ fun TodosAddUI(
     onSave: (
         String, // Title
         String, // Description
-        Int     // Urgency
+        Int     // Urgency [BARU]
     ) -> Unit
 ) {
     val alertState = remember { mutableStateOf(AlertState()) }
 
     var dataTitle by remember { mutableStateOf(tmpTodo?.title ?: "") }
     var dataDescription by remember { mutableStateOf(tmpTodo?.description ?: "") }
+    // [BARU] Inisialisasi state urgensi (default 1 = Low)
     var dataUrgency by remember { mutableIntStateOf(tmpTodo?.urgency ?: 1) }
 
     Column(
@@ -235,6 +236,7 @@ fun TodosAddUI(
             minLines = 3
         )
 
+        // [BARU] Pilihan Urgensi
         Text(
             text = "Tingkat Urgensi",
             style = MaterialTheme.typography.titleMedium,
@@ -278,6 +280,7 @@ fun TodosAddUI(
                     return@FloatingActionButton
                 }
 
+                // Kirim 3 data ke fungsi onSave
                 onSave(
                     dataTitle,
                     dataDescription,
@@ -294,6 +297,7 @@ fun TodosAddUI(
         }
     }
 
+    // Alert Dialog tetap sama
     if (alertState.value.isVisible) {
         AlertDialog(
             onDismissRequest = { AlertHelper.dismiss(alertState) },
@@ -312,4 +316,10 @@ fun TodosAddUI(
 @Preview(showBackground = true, name = "Light Mode")
 @Composable
 fun PreviewTodosAddUI() {
+//    DelcomTheme {
+//        TodosAddUI(
+//            todos = DummyData.getTodosAddData(),
+//            onOpen = {}
+//        )
+//    }
 }

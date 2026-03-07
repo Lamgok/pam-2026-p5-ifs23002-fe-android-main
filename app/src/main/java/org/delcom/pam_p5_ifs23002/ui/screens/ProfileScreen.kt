@@ -410,7 +410,7 @@ fun PreviewProfileUI(){
             profile = ResponseUserData(
                 id = "",
                 name = "Ridho Alexander Pakpahan",
-                username = "ifs23010",
+                username = "ifs23025",
                 about = "Mahasiswa Informatika S1 Institut Teknologi Del", // Ditambahkan untuk preview
                 createdAt = "",
                 updatedAt = ""

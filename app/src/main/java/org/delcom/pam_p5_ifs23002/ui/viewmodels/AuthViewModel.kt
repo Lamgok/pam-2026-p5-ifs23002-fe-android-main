@@ -1,6 +1,5 @@
 package org.delcom.pam_p5_ifs23002.ui.viewmodels
 
-import android.util.Log
 import androidx.annotation.Keep
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

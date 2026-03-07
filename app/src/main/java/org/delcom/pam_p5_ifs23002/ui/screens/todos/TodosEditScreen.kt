@@ -369,4 +369,10 @@ fun TodosEditUI(
 @Preview(showBackground = true, name = "Light Mode")
 @Composable
 fun PreviewTodosEditUI() {
+//    DelcomTheme {
+//        TodosEditUI(
+//            todos = DummyData.getTodosEditData(),
+//            onOpen = {}
+//        )
+//    }
 }

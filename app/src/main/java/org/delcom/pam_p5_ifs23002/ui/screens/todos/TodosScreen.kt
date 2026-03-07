@@ -39,7 +39,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -77,8 +76,9 @@ fun TodosScreen(
     var isLoading by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
 
+    // [BARU] State untuk Filter Urgensi dan Scroll
     var selectedFilter by remember { mutableStateOf<String?>(null) }
-    var selectedUrgency by remember { mutableStateOf<Int?>(null) }
+    var selectedUrgency by remember { mutableStateOf<Int?>(null) } // State Urgensi
     val listState = rememberLazyListState()
 
     var todos by remember { mutableStateOf<List<ResponseTodoData>>(emptyList()) }
@@ -87,6 +87,7 @@ fun TodosScreen(
     fun fetchTodosData() {
         isLoading = true
         authToken = (uiStateAuth.auth as AuthUIState.Success).data.authToken
+        // Kirim selectedUrgency ke ViewModel
         todoViewModel.resetAndGetAllTodos(authToken ?: "", searchQuery.text, selectedFilter, selectedUrgency)
     }
 
@@ -98,6 +99,7 @@ fun TodosScreen(
         fetchTodosData()
     }
 
+    // Logika Pagination (Infinite Scroll)
     val shouldLoadMore = remember {
         derivedStateOf {
             val layoutInfo = listState.layoutInfo
@@ -157,7 +159,9 @@ fun TodosScreen(
             onSearchAction = { fetchTodosData() }
         )
 
+        // Barisan Filter Chips (Status & Urgensi)
         Column(modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+            // Row 1: Filter Status (Sesuai kode lama Anda)
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -172,6 +176,7 @@ fun TodosScreen(
                 }
             }
 
+            // Row 2: Filter Urgensi (Fitur Baru)
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -245,7 +250,7 @@ fun TodoItemUI(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically // Sejajarkan isi Row
         ) {
 
             AsyncImage(
@@ -262,28 +267,31 @@ fun TodoItemUI(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
+                // ROW UNTUK JUDUL DAN LABEL URGENSI
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    // Judul Todo
                     Text(
                         text = todo.title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        modifier = Modifier.weight(1f), // Judul mengalah
+                        maxLines = 1, // Judul hanya 1 baris
+                        overflow = TextOverflow.Ellipsis // Judul dipotong jika kepanjangan
                     )
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp)) // Jarak
 
+                    // Label Urgensi Anti-Vertikal
                     Text(
                         text = when(todo.urgency) { 3 -> "High"; 2 -> "Med"; else -> "Low" },
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        softWrap = false
+                        maxLines = 1, // KUNCI 1
+                        softWrap = false // KUNCI 2: Dilarang melipat ke bawah
                     )
                 }
 
@@ -298,6 +306,7 @@ fun TodoItemUI(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
+                // Tetap gunakan warna asli Anda (tertiaryContainer / secondaryContainer)
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
@@ -328,4 +337,11 @@ fun TodoItemUI(
 @Preview(showBackground = true, name = "Light Mode")
 @Composable
 fun PreviewTodosUI() {
+//    DelcomTheme {
+//        TodosUI(
+//            todos = DummyData.getTodosData(),
+//            onOpen = {},
+//            listState = rememberLazyListState() // Tambahkan ini agar tidak error jika di-uncomment
+//        )
+//    }
 }
